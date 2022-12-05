@@ -19,7 +19,7 @@ type TrainerRepository interface {
 	Save(trainer *Trainer) error
 	FindByName(name string) (*Trainer, error)
 	FindAll() ([]*Trainer, error)
-	Delete(name string) error
+	DeleteByName(name string) error
 }
 
 // TrainerRepository Mongodb Implementation
@@ -120,7 +120,8 @@ func main() {
 	err = db.CreateCollection(context.TODO(), "trainers")
 	errorHandler(err)
 
-	trainersRepo, err := NewTrainerRepository(cli)
+	var trainersRepo TrainerRepository
+	trainersRepo, err = NewTrainerRepository(cli)
 	errorHandler(err)
 
 	trainersRepo.Save(&Trainer{Name: "Marcus", Age: 25, City: "Nuporanga-SP"})
