@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -25,7 +26,7 @@ func errorHandler(err error) {
 type TrainerRepository interface {
 	Save(trainer *Trainer) error
 	FindById(id string) (*Trainer, error)
-	FindAll() ([]Trainer, error)
+	FindAll() ([]*Trainer, error)
 	Delete(id string) error
 }
 
@@ -50,8 +51,37 @@ func (repository *TrainerRepositoryMongodb) Save(trainer *Trainer) error {
 		return err
 	}
 
-	log.Println("Inserted:", insertResults)
+	log.Println("Inserted:", trainer.Name, insertResults)
 	return nil
+}
+
+func (repository *TrainerRepositoryMongodb) FindAll() ([]*Trainer, error) {
+	var results []*Trainer
+
+	findOptions := options.Find()
+	findOptions.SetLimit(100_000)
+
+	cursor, err := repository.collection.Find(context.TODO(), bson.D{}, findOptions)
+	if err != nil {
+		return nil, err
+	}
+
+	for cursor.Next(context.TODO()) {
+		var trainer Trainer
+		err := cursor.Decode(&trainer)
+		if err != nil {
+			return nil, err
+		}
+
+		results = append(results, &trainer)
+	}
+
+	if err := cursor.Err(); err != nil {
+		return nil, err
+	}
+
+	cursor.Close(context.TODO())
+	return results, nil
 }
 
 // Bson documents
@@ -76,6 +106,16 @@ func main() {
 	errorHandler(err)
 
 	trainersRepo.Save(&Trainer{Name: "Marcus", Age: 25, City: "Nuporanga-SP"})
+	trainersRepo.Save(&Trainer{Name: "Leticia Presoto", Age: 25, City: "Orlandia-SP"})
+	trainersRepo.Save(&Trainer{Name: "Magali", Age: 2, City: "Uberlandia-SP"})
+	trainersRepo.Save(&Trainer{Name: "Cacau", Age: 1, City: "Uberlandia-SP"})
+
+	trainers, err := trainersRepo.FindAll()
+	errorHandler(err)
+
+	for _, trainer := range trainers {
+		log.Println(trainer)
+	}
 
 	defer db.Drop(context.TODO())
 }
