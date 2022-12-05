@@ -10,24 +10,16 @@ import (
 )
 
 type Trainer struct {
-	Id   string `bson:"-"`
 	Name string
 	Age  int
 	City string
 }
 
-func errorHandler(err error) {
-	if err != nil {
-		log.Fatal(err)
-		panic(err)
-	}
-}
-
 type TrainerRepository interface {
 	Save(trainer *Trainer) error
-	FindById(id string) (*Trainer, error)
+	FindByName(name string) (*Trainer, error)
 	FindAll() ([]*Trainer, error)
-	Delete(id string) error
+	Delete(name string) error
 }
 
 // TrainerRepository Mongodb Implementation
@@ -61,7 +53,7 @@ func (repository *TrainerRepositoryMongodb) FindAll() ([]*Trainer, error) {
 	findOptions := options.Find()
 	findOptions.SetLimit(100_000)
 
-	cursor, err := repository.collection.Find(context.TODO(), bson.D{}, findOptions)
+	cursor, err := repository.collection.Find(context.TODO(), bson.D{{}}, findOptions)
 	if err != nil {
 		return nil, err
 	}
@@ -84,6 +76,30 @@ func (repository *TrainerRepositoryMongodb) FindAll() ([]*Trainer, error) {
 	return results, nil
 }
 
+func (repository *TrainerRepositoryMongodb) FindByName(name string) (*Trainer, error) {
+	findOptions := options.FindOne()
+
+	result := repository.collection.FindOne(context.TODO(), bson.M{"name": name}, findOptions)
+
+	var trainer Trainer
+	err := result.Decode(&trainer)
+	return &trainer, err
+}
+
+func (repository *TrainerRepositoryMongodb) DeleteByName(name string) error {
+	deletedResult, err := repository.collection.DeleteOne(context.TODO(),
+		bson.M{"name": name})
+
+	log.Println("Deleted:", deletedResult)
+	return err
+}
+
+func errorHandler(err error) {
+	if err != nil {
+		log.Println("Error:", err)
+	}
+}
+
 // Bson documents
 // D: A BSON document. This type should be used in situations where order matters, such as MongoDB commands.
 // M: An unordered map. It is the same as D, except it does not preserve order.
@@ -99,6 +115,8 @@ func main() {
 	errorHandler(err)
 
 	db := cli.Database("dbtrainers")
+	defer db.Drop(context.TODO())
+
 	err = db.CreateCollection(context.TODO(), "trainers")
 	errorHandler(err)
 
@@ -117,5 +135,9 @@ func main() {
 		log.Println(trainer)
 	}
 
-	defer db.Drop(context.TODO())
+	found, err := trainersRepo.FindByName("Marcus")
+	errorHandler(err)
+	log.Println("Found:", found)
+
+	trainersRepo.DeleteByName("Marcus")
 }
