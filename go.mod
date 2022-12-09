@@ -1,4 +1,4 @@
-module github.com/marcusadriano/crud-mongodb
+module github.com/MarcusAdriano/go-crud-mongodb-playground
 
 go 1.19
 
