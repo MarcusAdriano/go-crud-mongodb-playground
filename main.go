@@ -126,8 +126,8 @@ func main() {
 
 	trainersRepo.Save(&Trainer{Name: "Marcus", Age: 25, City: "Nuporanga-SP"})
 	trainersRepo.Save(&Trainer{Name: "Leticia Presoto", Age: 25, City: "Orlandia-SP"})
-	trainersRepo.Save(&Trainer{Name: "Magali", Age: 2, City: "Uberlandia-SP"})
-	trainersRepo.Save(&Trainer{Name: "Cacau", Age: 1, City: "Uberlandia-SP"})
+	trainersRepo.Save(&Trainer{Name: "Magali", Age: 2, City: "Uberlandia-MG"})
+	trainersRepo.Save(&Trainer{Name: "Cacau", Age: 1, City: "Uberlandia-MG"})
 
 	trainers, err := trainersRepo.FindAll()
 	errorHandler(err)
